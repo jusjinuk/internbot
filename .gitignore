@@ -4,3 +4,4 @@ store/
 .env
 *.db
 *.db-journal
+reports-repo/

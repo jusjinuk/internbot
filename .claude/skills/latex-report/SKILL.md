@@ -1,6 +1,6 @@
 ---
 name: latex-report
-description: Write LaTeX research reports. Use when asked to write, compile, or push a report.
+description: Write LaTeX research reports. Use when asked to write, compile, or publish a report and save it to the dedicated reports repository.
 ---
 
 # LaTeX Report Writing
@@ -10,6 +10,12 @@ description: Write LaTeX research reports. Use when asked to write, compile, or 
 - User asks to write a report, summary, or technical document
 - User asks to compile or fix a LaTeX file
 - User wants a paper summary formatted as a document
+
+## Canonical Location
+
+- Save report sources and PDFs under `reports-repo/reports/`
+- Prefer filename format: `YYYY-MM-DD-<topic>.tex` and matching `.pdf`
+- If directory is missing, create it
 
 ## Workflow
 
@@ -33,7 +39,7 @@ description: Write LaTeX research reports. Use when asked to write, compile, or 
    - `\usepackage{graphicx}` for figures
    - `\usepackage{hyperref}` for clickable references
 
-4. **Save** to the workspace directory with a descriptive filename
+4. **Save** to `reports-repo/reports/` with a descriptive filename
 
 5. **Compile**:
    ```bash
@@ -44,7 +50,9 @@ description: Write LaTeX research reports. Use when asked to write, compile, or 
    ```
    Run pdflatex twice (three times with bibtex) to resolve references.
 
-6. **If git is configured**, commit and push the .tex and .pdf files
+6. **From `reports-repo`**, commit the `.tex` and `.pdf` files
+   - Ask for explicit confirmation before any `git push`
+   - Do not commit generated reports to the main `internbot` repo unless user explicitly asks
 
 7. **Post to Slack**: a brief plain-text summary (not the full LaTeX), mention where the PDF is
 
@@ -58,4 +66,4 @@ description: Write LaTeX research reports. Use when asked to write, compile, or 
 
 - Don't paste LaTeX source into Slack
 - Give a 2-3 sentence summary of what the report covers
-- Mention the file location and how to access the PDF
+- Mention the GitHub link to the PDF in `internbot-reports`
