@@ -1,11 +1,9 @@
-import Anthropic from '@anthropic-ai/sdk';
+import { query } from '@anthropic-ai/claude-agent-sdk';
 
-import { ANTHROPIC_API_KEY, ASSISTANT_NAME, TRIAGE_MODEL } from './config.js';
+import { ASSISTANT_NAME, TRIAGE_MODEL } from './config.js';
 import { logger } from './logger.js';
 import { discoverSkills } from './skills.js';
 import { NewMessage, TriageResult } from './types.js';
-
-const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
 
 /**
  * Free check: does the message mention the bot?
@@ -81,24 +79,37 @@ Respond with ONLY a JSON object. For "simple", include a reply. Examples:
 {"action": "simple", "reply": "Hi! How can I help you today?"}
 {"action": "escalate"}`;
 
-  try {
-    const response = await client.messages.create({
-      model: TRIAGE_MODEL,
-      max_tokens: 256,
-      system: systemPrompt,
-      messages: [
-        {
-          role: 'user',
-          content: contextLines
-            ? `Recent conversation:\n${contextLines}\n\nNew message from ${msg.sender_name}: ${msg.content}`
-            : `Message from ${msg.sender_name}: ${msg.content}`,
-        },
-      ],
-    });
+  const userMessage = contextLines
+    ? `Recent conversation:\n${contextLines}\n\nNew message from ${msg.sender_name}: ${msg.content}`
+    : `Message from ${msg.sender_name}: ${msg.content}`;
 
-    const text =
-      response.content[0].type === 'text' ? response.content[0].text : '';
-    return parseTriageResponse(text);
+  try {
+    let resultText = '';
+
+    for await (const message of query({
+      prompt: userMessage,
+      options: {
+        model: TRIAGE_MODEL,
+        systemPrompt: systemPrompt,
+        tools: [],
+        maxTurns: 1,
+        permissionMode: 'bypassPermissions',
+        allowDangerouslySkipPermissions: true,
+        cwd: process.cwd(),
+      },
+    })) {
+      if (message.type === 'result') {
+        const text =
+          'result' in message
+            ? (message as { result?: string }).result
+            : null;
+        if (text) {
+          resultText += text;
+        }
+      }
+    }
+
+    return parseTriageResponse(resultText);
   } catch (err) {
     logger.error({ err }, 'Triage API call failed, defaulting to escalate');
     return { action: 'escalate' };

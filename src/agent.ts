@@ -6,14 +6,13 @@ import {
 
 import {
   AGENT_MODEL,
-  ANTHROPIC_API_KEY,
   ASSISTANT_NAME,
 } from './config.js';
 import { getSession, setSession } from './db.js';
 import { logger } from './logger.js';
 import { AgentResult } from './types.js';
 
-const SECRET_ENV_VARS = ['ANTHROPIC_API_KEY', 'CLAUDE_CODE_OAUTH_TOKEN'];
+const SECRET_ENV_VARS = ['CLAUDE_CODE_OAUTH_TOKEN'];
 
 function createSanitizeBashHook(): HookCallback {
   return async (input) => {
@@ -41,7 +40,6 @@ export async function runAgent(
   const sessionId = getSession(channelId);
 
   const sdkEnv: Record<string, string | undefined> = { ...process.env };
-  sdkEnv.ANTHROPIC_API_KEY = ANTHROPIC_API_KEY;
 
   let newSessionId: string | undefined;
   let resultText = '';

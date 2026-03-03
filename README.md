@@ -44,7 +44,6 @@ All config is in `.env`:
 |----------|-------------|---------|
 | `SLACK_BOT_TOKEN` | Slack bot OAuth token | (required) |
 | `SLACK_APP_TOKEN` | Slack app-level token | (required) |
-| `ANTHROPIC_API_KEY` | Anthropic API key | (required) |
 | `ASSISTANT_NAME` | Bot display name | `internbot` |
 | `WHITELISTED_CHANNELS` | Comma-separated channel IDs | (all channels) |
 
@@ -54,7 +53,7 @@ All config is in `.env`:
 src/
   index.ts      # Orchestrator: Slack events → triage → agent → reply
   slack.ts      # @slack/bolt Socket Mode connection
-  triage.ts     # Haiku triage (Anthropic SDK direct API call)
+  triage.ts     # Haiku triage (Claude Code SDK)
   agent.ts      # Agent (Claude Code SDK, runs in host process)
   config.ts     # .env config reader
   db.ts         # SQLite (messages + sessions)
