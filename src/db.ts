@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 
 import { STORE_DIR } from './config.js';
-import { NewMessage } from './types.js';
+import { NewMessage, ScheduledTask } from './types.js';
 
 let db: Database.Database;
 
@@ -27,6 +27,33 @@ function createSchema(database: Database.Database): void {
     CREATE TABLE IF NOT EXISTS sessions (
       channel_id TEXT PRIMARY KEY,
       session_id TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS scheduled_tasks (
+      id TEXT PRIMARY KEY,
+      channel_id TEXT NOT NULL,
+      created_by TEXT NOT NULL,
+      prompt TEXT NOT NULL,
+      schedule_type TEXT NOT NULL CHECK(schedule_type IN ('once', 'cron')),
+      schedule_value TEXT NOT NULL,
+      next_run TEXT,
+      last_run TEXT,
+      last_result TEXT,
+      status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active', 'completed', 'cancelled')),
+      created_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_next_run ON scheduled_tasks(next_run);
+    CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_channel ON scheduled_tasks(channel_id);
+
+    CREATE TABLE IF NOT EXISTS task_run_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      task_id TEXT NOT NULL,
+      run_at TEXT NOT NULL,
+      duration_ms INTEGER NOT NULL,
+      status TEXT NOT NULL CHECK(status IN ('success', 'error')),
+      result TEXT,
+      error TEXT,
+      FOREIGN KEY (task_id) REFERENCES scheduled_tasks(id)
     );
   `);
 }
@@ -89,4 +116,83 @@ export function setSession(channelId: string, sessionId: string): void {
   db.prepare(
     'INSERT OR REPLACE INTO sessions (channel_id, session_id) VALUES (?, ?)',
   ).run(channelId, sessionId);
+}
+
+// --- Scheduled tasks ---
+
+export function createTask(task: Omit<ScheduledTask, 'last_run' | 'last_result'>): void {
+  db.prepare(
+    `INSERT INTO scheduled_tasks (id, channel_id, created_by, prompt, schedule_type, schedule_value, next_run, status, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).run(
+    task.id,
+    task.channel_id,
+    task.created_by,
+    task.prompt,
+    task.schedule_type,
+    task.schedule_value,
+    task.next_run,
+    task.status,
+    task.created_at,
+  );
+}
+
+export function getTaskById(id: string): ScheduledTask | undefined {
+  return db
+    .prepare('SELECT * FROM scheduled_tasks WHERE id = ?')
+    .get(id) as ScheduledTask | undefined;
+}
+
+export function getTasksForChannel(channelId: string): ScheduledTask[] {
+  return db
+    .prepare(
+      `SELECT * FROM scheduled_tasks
+       WHERE channel_id = ? AND status = 'active'
+       ORDER BY created_at DESC`,
+    )
+    .all(channelId) as ScheduledTask[];
+}
+
+export function getDueTasks(): ScheduledTask[] {
+  const now = new Date().toISOString();
+  return db
+    .prepare(
+      `SELECT * FROM scheduled_tasks
+       WHERE status = 'active' AND next_run IS NOT NULL AND next_run <= ?
+       ORDER BY next_run ASC`,
+    )
+    .all(now) as ScheduledTask[];
+}
+
+export function updateTaskAfterRun(
+  id: string,
+  nextRun: string | null,
+  status: ScheduledTask['status'],
+  lastResult: string | null,
+): void {
+  db.prepare(
+    `UPDATE scheduled_tasks
+     SET next_run = ?, status = ?, last_run = ?, last_result = ?
+     WHERE id = ?`,
+  ).run(nextRun, status, new Date().toISOString(), lastResult, id);
+}
+
+export function deleteTask(id: string): boolean {
+  const result = db
+    .prepare(`UPDATE scheduled_tasks SET status = 'cancelled' WHERE id = ? AND status = 'active'`)
+    .run(id);
+  return result.changes > 0;
+}
+
+export function logTaskRun(
+  taskId: string,
+  durationMs: number,
+  status: 'success' | 'error',
+  result: string | null,
+  error: string | null,
+): void {
+  db.prepare(
+    `INSERT INTO task_run_logs (task_id, run_at, duration_ms, status, result, error)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+  ).run(taskId, new Date().toISOString(), durationMs, status, result, error);
 }

@@ -27,9 +27,11 @@ description: Set up internbot for development. Use when setting up the project f
    - `groups:read`
    - `im:history`
    - `im:read`
+   - `im:write`
    - `mpim:history`
    - `mpim:read`
    - `users:read`
+   - `reactions:write`
 5. Under **Event Subscriptions** → toggle on → Subscribe to bot events:
    - `message.channels`
    - `message.groups`

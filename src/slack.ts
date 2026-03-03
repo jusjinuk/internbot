@@ -139,6 +139,38 @@ export class SlackConnection {
     }
   }
 
+  async addReaction(
+    channelId: string,
+    timestamp: string,
+    emoji: string,
+  ): Promise<void> {
+    try {
+      await this.app.client.reactions.add({
+        channel: channelId,
+        timestamp,
+        name: emoji,
+      });
+    } catch (err) {
+      logger.warn({ err }, 'Failed to add reaction');
+    }
+  }
+
+  async removeReaction(
+    channelId: string,
+    timestamp: string,
+    emoji: string,
+  ): Promise<void> {
+    try {
+      await this.app.client.reactions.remove({
+        channel: channelId,
+        timestamp,
+        name: emoji,
+      });
+    } catch (err) {
+      logger.warn({ err }, 'Failed to remove reaction');
+    }
+  }
+
   async disconnect(): Promise<void> {
     this.connected = false;
     await this.app.stop();

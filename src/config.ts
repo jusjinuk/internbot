@@ -20,7 +20,11 @@ export const WHITELISTED_CHANNELS: string[] = rawWhitelist
   ? rawWhitelist.split(',').map((s) => s.trim()).filter(Boolean)
   : [];
 
-export const TRIAGE_MODEL = 'claude-haiku-4-5-20251001';
-export const AGENT_MODEL = 'claude-sonnet-4-6-20260320';
+export const TRIAGE_MODEL = 'haiku';
+export const AGENT_MODEL = 'opus';
 
 export const STORE_DIR = 'store';
+
+export const SCHEDULER_POLL_INTERVAL = 60_000;
+export const TIMEZONE =
+  process.env.TZ || Intl.DateTimeFormat().resolvedOptions().timeZone;
