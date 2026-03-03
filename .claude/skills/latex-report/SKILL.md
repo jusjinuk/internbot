@@ -1,0 +1,61 @@
+---
+name: latex-report
+description: Write LaTeX research reports. Use when asked to write, compile, or push a report.
+---
+
+# LaTeX Report Writing
+
+## When to use
+
+- User asks to write a report, summary, or technical document
+- User asks to compile or fix a LaTeX file
+- User wants a paper summary formatted as a document
+
+## Workflow
+
+### Writing a new report
+
+1. **Clarify scope**: what topic, how detailed, who's the audience?
+2. **Write the .tex file** using `\documentclass{article}` with these sections:
+   - `\begin{abstract}` — 3-5 sentence summary
+   - `\section{Introduction}` — context, motivation, what this report covers
+   - `\section{Related Work}` — key prior work, how it connects
+   - `\section{Analysis}` or `\section{Method}` — the main content
+   - `\section{Discussion}` — implications, open questions
+   - `\section{Conclusion}` — key takeaways, next steps
+   - `\bibliography` — use BibTeX for citations
+
+3. **Use proper LaTeX conventions**:
+   - `\cite{}` for references, not inline text citations
+   - `\ref{}` for cross-references to figures/tables/sections
+   - `\begin{figure}`, `\begin{table}` for floats
+   - `\usepackage{amsmath}` for equations
+   - `\usepackage{graphicx}` for figures
+   - `\usepackage{hyperref}` for clickable references
+
+4. **Save** to the workspace directory with a descriptive filename
+
+5. **Compile**:
+   ```bash
+   pdflatex -interaction=nonstopmode -output-directory=<dir> <file>.tex
+   bibtex <file>  # if bibliography used
+   pdflatex -interaction=nonstopmode -output-directory=<dir> <file>.tex
+   pdflatex -interaction=nonstopmode -output-directory=<dir> <file>.tex
+   ```
+   Run pdflatex twice (three times with bibtex) to resolve references.
+
+6. **If git is configured**, commit and push the .tex and .pdf files
+
+7. **Post to Slack**: a brief plain-text summary (not the full LaTeX), mention where the PDF is
+
+### Fixing compilation errors
+
+- Read the .log file for the actual error (not just the first line)
+- Common issues: missing `\end{}`, unescaped `_` or `%`, missing packages
+- Fix the .tex and recompile
+
+## Formatting for Slack
+
+- Don't paste LaTeX source into Slack
+- Give a 2-3 sentence summary of what the report covers
+- Mention the file location and how to access the PDF
