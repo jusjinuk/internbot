@@ -153,6 +153,16 @@ export function getTasksForChannel(channelId: string): ScheduledTask[] {
     .all(channelId) as ScheduledTask[];
 }
 
+export function getAllActiveTasks(): ScheduledTask[] {
+  return db
+    .prepare(
+      `SELECT * FROM scheduled_tasks
+       WHERE status = 'active'
+       ORDER BY created_at DESC`,
+    )
+    .all() as ScheduledTask[];
+}
+
 export function getDueTasks(): ScheduledTask[] {
   const now = new Date().toISOString();
   return db

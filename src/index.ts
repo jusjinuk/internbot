@@ -6,6 +6,7 @@ import { ASSISTANT_NAME, TIMEZONE, WHITELISTED_CHANNELS } from './config.js';
 import {
   createTask,
   deleteTask,
+  getAllActiveTasks,
   getRecentMessages,
   getTaskById,
   getTasksForChannel,
@@ -105,10 +106,7 @@ async function processMessage(msg: NewMessage): Promise<void> {
     return;
   }
 
-  if (result.action === 'schedule_manage' && result.manage) {
-    await handleScheduleManage(msg, result.manage, result.reply);
-    return;
-  }
+  // schedule_manage falls through to escalate so the agent can use the manage-schedules skill
 
   // Escalate to agent
   activeAgents.add(msg.channel_id);
@@ -260,10 +258,10 @@ async function handleScheduleManage(
   );
 
   if (manage.operation === 'list') {
-    const tasks = getTasksForChannel(msg.channel_id);
+    const tasks = getAllActiveTasks();
     let response: string;
     if (tasks.length === 0) {
-      response = reply || 'No active scheduled tasks in this channel.';
+      response = 'No active scheduled tasks.';
     } else {
       const lines = tasks.map((t) => {
         const nextStr = t.next_run

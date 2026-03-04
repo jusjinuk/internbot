@@ -70,6 +70,10 @@ src/
   latex-report/    # LaTeX report skill
 ```
 
+## Acknowledgements
+
+This project is a fork of [NanoClaw](https://github.com/qwibitai/nanoclaw) and inherits its skill-centric architecture. The triage agent design — using a lightweight model to classify and route messages before escalating to a full agent — is inspired by [KIRA](https://github.com/krafton-ai/KIRA) from the KRAFTON KIRA project.
+
 ## License
 
 MIT
