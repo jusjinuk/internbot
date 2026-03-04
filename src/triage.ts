@@ -1,10 +1,9 @@
 import { query } from '@anthropic-ai/claude-agent-sdk';
 
-import { ASSISTANT_NAME, TIMEZONE, TRIAGE_MODEL } from './config.js';
-import { getTasksForChannel } from './db.js';
+import { ASSISTANT_NAME, TRIAGE_MODEL } from './config.js';
 import { logger } from './logger.js';
 import { discoverSkills } from './skills.js';
-import { NewMessage, ScheduledTask, TriageResult } from './types.js';
+import { NewMessage, TriageResult } from './types.js';
 
 /**
  * Free check: does the message mention the bot?
@@ -37,40 +36,6 @@ export function parseTriageResponse(text: string): TriageResult {
     if (action === 'escalate') {
       return { action: 'escalate', reply: parsed.reply };
     }
-    if (action === 'schedule' && parsed.schedule) {
-      const { prompt, type, value } = parsed.schedule;
-      if (prompt && (type === 'once' || type === 'cron') && value) {
-        return {
-          action: 'schedule',
-          reply: parsed.reply,
-          schedule: { prompt, type, value },
-        };
-      }
-    }
-    if (action === 'schedule_manage' && parsed.manage) {
-      const { operation, taskId, updates } = parsed.manage;
-      if (operation === 'list') {
-        return {
-          action: 'schedule_manage',
-          reply: parsed.reply,
-          manage: { operation },
-        };
-      }
-      if (operation === 'cancel' && taskId) {
-        return {
-          action: 'schedule_manage',
-          reply: parsed.reply,
-          manage: { operation, taskId },
-        };
-      }
-      if (operation === 'update' && taskId && updates) {
-        return {
-          action: 'schedule_manage',
-          reply: parsed.reply,
-          manage: { operation, taskId, updates },
-        };
-      }
-    }
     return { action: 'ignore' };
   } catch {
     return { action: 'ignore' };
@@ -97,41 +62,21 @@ export async function triage(
     ? `\n\nIMPORTANT: The agent is currently busy with a previous request. If the message would normally be "escalate", classify it as "simple" instead and reply with a brief, contextual message letting the user know you're still working on something and will get to their request next.`
     : '';
 
-  // Build active tasks context for cancel/list operations
-  let activeTasks: ScheduledTask[] = [];
-  try {
-    activeTasks = getTasksForChannel(msg.channel_id);
-  } catch { /* db may not be ready */ }
-  const tasksContext = activeTasks.length > 0
-    ? `\n\nActive scheduled tasks in this channel:\n${activeTasks.map((t) => `- [${t.id}] "${t.prompt}" (${t.schedule_type}: ${t.schedule_value})`).join('\n')}`
-    : '';
-
-  const now = new Date();
-  const timeContext = `\nCurrent time: ${now.toISOString()} (timezone: ${TIMEZONE})`;
-
-  const systemPrompt = `You are a triage classifier for ${ASSISTANT_NAME}, a research assistant bot in Slack.
+  const systemPrompt = `You are a triage classifier for ${ASSISTANT_NAME}, a helpful assistant bot in a research lab's Slack workspace. The bot specializes in research tasks but also helps with any reasonable request from lab members.
 
 Available skills: ${skills.join(', ') || 'none'}
 Message is from: ${isDm ? 'a direct message (always directed at the bot)' : 'a channel (may or may not be directed at the bot)'}
-Bot name: ${ASSISTANT_NAME}${timeContext}${tasksContext}
+Bot name: ${ASSISTANT_NAME}
 
 Classify the user's message into one of:
 - "ignore": not directed at the bot, people talking to each other, human chatter, or messages that don't need a response. In channels, most messages are people talking to each other — only respond if the bot is explicitly addressed (by name, @mention, or clearly directed at it)
-- "simple": greeting, acknowledgment, or a question answerable in 1-2 sentences without tools
-- "escalate": paper search, code review, brainstorming, report writing, web search, complex questions, anything requiring tools or detailed analysis
-- "schedule": user wants to set up a one-time reminder or recurring task
-- "schedule_manage": user wants to list, cancel, or update scheduled tasks
+- "simple": ONLY for greetings, acknowledgments, trivial factual questions answerable in 1-2 sentences, or refusing clearly unethical/dangerous requests (e.g., hacking, harassment, illegal activity). Never use "simple" to decline a legitimate task — if the request is reasonable, escalate instead.
+- "escalate": anything else directed at the bot, including but not limited to: paper search, code review, brainstorming, report writing, web search, browsing URLs/links, shopping, fetching web pages, scheduling/reminders, complex questions, or any task the user asks for help with.
 
-Respond with ONLY a JSON object. For "simple", include a reply. For "escalate", include a brief contextual acknowledgment message (1 sentence, letting the user know you're on it). For "schedule", include schedule details. For "schedule_manage", include the manage operation. Examples:
+Respond with ONLY a JSON object. For "simple", include a reply. For "escalate", include a brief contextual acknowledgment message (1 sentence, letting the user know you're on it). Examples:
 {"action": "ignore"}
 {"action": "simple", "reply": "Hi! How can I help you today?"}
-{"action": "escalate", "reply": "Let me search for that paper — one moment."}
-{"action": "schedule", "reply": "I'll set that reminder for you.", "schedule": {"prompt": "check the server status", "type": "once", "value": "2026-03-03T15:00:00.000Z"}}
-{"action": "schedule", "reply": "I'll search arxiv for RL papers every Monday.", "schedule": {"prompt": "search arxiv for recent reinforcement learning papers and summarize the top 3", "type": "cron", "value": "0 9 * * 1"}}
-{"action": "schedule_manage", "reply": "Here are your scheduled tasks.", "manage": {"operation": "list"}}
-{"action": "schedule_manage", "reply": "I'll cancel that task.", "manage": {"operation": "cancel", "taskId": "task-abc123"}}
-{"action": "schedule_manage", "reply": "I'll update that task's schedule.", "manage": {"operation": "update", "taskId": "task-abc123", "updates": {"schedule_value": "0 9 * * *"}}}
-{"action": "schedule_manage", "reply": "I'll update the task prompt.", "manage": {"operation": "update", "taskId": "task-abc123", "updates": {"prompt": "search arxiv for RL and robotics papers"}}}${busyNotice}`;
+{"action": "escalate", "reply": "Let me search for that paper — one moment."}${busyNotice}`;
 
   const userMessage = contextLines
     ? `Recent conversation:\n${contextLines}\n\nNew message from ${msg.sender_name}: ${msg.content}`

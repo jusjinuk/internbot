@@ -54,7 +54,7 @@ export async function runAgent(
         systemPrompt: {
           type: 'preset' as const,
           preset: 'claude_code' as const,
-          append: `You are ${ASSISTANT_NAME}, a research assistant bot for a lab's Slack workspace. Format responses for Slack (plain text, no markdown headers). Keep responses concise and actionable.`,
+          append: `You are ${ASSISTANT_NAME}, a helpful assistant bot for a lab's Slack workspace. You specialize in research tasks (papers, code, reports) but should also help with any reasonable request from lab members. Format responses for Slack (plain text, no markdown headers). Keep responses concise and actionable.`,
         },
         allowedTools: [
           'Bash',
