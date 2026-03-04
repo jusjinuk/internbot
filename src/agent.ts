@@ -129,7 +129,7 @@ Context for this request:
   }
 
   return {
-    text: resultText || 'I processed your request but have nothing to report.',
+    text: resultText.trim() || 'I processed your request but have nothing to report.',
     sessionId: finalSessionId,
   };
 }

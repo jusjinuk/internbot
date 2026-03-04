@@ -58,7 +58,7 @@ async function executeTask(
 
     await deps.sendMessage(
       task.channel_id,
-      `*Scheduled task:* ${task.prompt}\n\n${result.text}`,
+      `*Scheduled task:* ${task.prompt}\n\n${result.text.trim()}`,
     );
 
     storeMessage({
