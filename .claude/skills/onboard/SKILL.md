@@ -49,7 +49,35 @@ cp .env.example .env
 #   SLACK_APP_TOKEN=xapp-...
 ```
 
-### 3. Install & Run
+### 3. Set Up Reports Repository
+
+The bot publishes LaTeX reports to a separate GitHub repo. Set it up as a subdirectory:
+
+```bash
+mkdir reports-repo && cd reports-repo
+git init
+mkdir reports
+echo '[]' > papers-log.json
+git add . && git commit -m "init reports repo"
+```
+
+Create a GitHub repo for reports, then configure the remote with a dedicated account (optional):
+
+```bash
+git remote add origin https://<github-user>@github.com/<github-user>/<repo-name>.git
+git config user.name "<bot-name>"
+git config user.email "<github-user>@users.noreply.github.com"
+git push -u origin main
+```
+
+If using a dedicated GitHub account, store its PAT locally:
+
+```bash
+echo "https://<github-user>:<PAT>@github.com" > .git/credentials
+git config credential.helper 'store --file=.git/credentials'
+```
+
+### 4. Install & Run
 
 ```bash
 npm install
@@ -58,7 +86,7 @@ npm run build  # Compile TypeScript
 npm start      # Run compiled version
 ```
 
-### 4. Test
+### 5. Test
 
 - DM the bot "hi" → should get a simple reply
 - In a channel, @mention the bot with a question → should get a threaded response
