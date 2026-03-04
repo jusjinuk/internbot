@@ -1,6 +1,6 @@
 # internbot
 
-A minimal Slack bot for research labs. Routes messages through Haiku triage (cheap, fast) and escalates complex requests to an Opus agent running via the Claude Code SDK.
+A minimal Slack bot for research labs (~1,650 lines of TypeScript). Routes messages through Haiku triage (cheap, fast) and escalates complex requests to an Opus agent running via the Claude Code SDK.
 
 ## How It Works
 
@@ -15,13 +15,28 @@ Slack message → whitelist filter → store in SQLite → Haiku triage
 1. Free string match — if the bot isn't mentioned in a channel, ignore with zero cost
 2. Haiku API call — classifies into ignore/simple/escalate
 
-**Agent capabilities** (via MCP servers and built-in tools):
-- ArXiv paper search and summarization
-- Web search for recent information
-- Research brainstorming
-- Code review
-- LaTeX report writing
-- File read/write/edit, bash commands
+## Skills
+
+| Skill | Description |
+|-------|-------------|
+| `arxiv-search` | Search and summarize arxiv papers |
+| `web-search` | Search the web for recent information |
+| `research-brainstorm` | Brainstorm follow-up research directions from papers |
+| `code-review` | Explain and review code |
+| `latex-report` | Write LaTeX research reports, publish to GitHub |
+| `daily-papers` | Review HuggingFace daily papers, write a LaTeX summary of the top pick |
+| `manage-schedules` | View, add, update, or cancel scheduled/recurring tasks |
+| `add-channel` | Add a Slack channel to the bot's whitelist |
+| `onboard` | Developer setup guide |
+
+## MCP Servers
+
+| Server | Package | Description |
+|--------|---------|-------------|
+| `arxiv` | `@langgpt/arxiv-paper-mcp` | Search and fetch arxiv papers |
+| `context7` | `@upstash/context7-mcp` | Library documentation lookup |
+| `time` | `@mcpcentral/mcp-time` | Current time and timezone info |
+| `hf_papers` | `huggingface-daily-paper-mcp` | HuggingFace daily papers feed |
 
 ## Setup
 
@@ -61,13 +76,6 @@ src/
   env.ts        # .env parser
   logger.ts     # Pino logger
   types.ts      # TypeScript interfaces
-.claude/skills/
-  onboard/         # Developer setup guide
-  arxiv-search/    # Paper search skill
-  web-search/      # Web search skill
-  research-brainstorm/  # Research ideation skill
-  code-review/     # Code review skill
-  latex-report/    # LaTeX report skill
 ```
 
 ## Acknowledgements
