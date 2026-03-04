@@ -102,4 +102,4 @@ Post a concise summary (not the full report):
 - Paper title with links: arxiv, HF daily papers page, GitHub repo (if exists)
 - 2-3 sentence summary of what the paper does and why it matters
 - Top follow-up research idea (1 sentence)
-- Link to the PDF report: `https://github.com/claw1jinuk/internbot-reports/blob/main/reports/YYYY-MM-DD-daily-papers.pdf`
+- Link to the PDF report: get the repo URL via `git -C reports-repo remote get-url origin`, then construct `<repo-url>/blob/main/reports/YYYY-MM-DD-daily-papers.pdf` (strip any `.git` suffix and auth prefix)

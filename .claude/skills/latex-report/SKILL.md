@@ -64,9 +64,10 @@ description: Write LaTeX research reports. Use when asked to write, compile, or 
 
 ## GitHub Repository
 
-- Reports repo: `https://github.com/claw1jinuk/internbot-reports`
-- Direct PDF link format: `https://github.com/claw1jinuk/internbot-reports/blob/main/reports/<filename>.pdf`
-- The repo uses a dedicated GitHub account (`claw1jinuk`) — credentials are already configured locally
+- Reports are stored in the `reports-repo/` git subdir (separate repo with its own remote)
+- To get the GitHub URL, run: `git -C reports-repo remote get-url origin`
+- Direct PDF link format: `<repo-url>/blob/main/reports/<filename>.pdf` (strip any `.git` suffix and auth prefix)
+- Credentials are already configured locally in the reports-repo
 
 ## Formatting for Slack
 
