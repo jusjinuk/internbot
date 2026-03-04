@@ -109,7 +109,7 @@ async function processMessage(msg: NewMessage): Promise<void> {
   );
 
   try {
-    const agentResult = await runAgent(msg.content, msg.channel_id);
+    const agentResult = await runAgent(msg.content, msg.channel_id, msg.sender_name);
 
     await slack.sendMessage(
       msg.channel_id,

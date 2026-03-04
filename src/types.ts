@@ -12,21 +12,8 @@ export interface NewMessage {
 }
 
 export interface TriageResult {
-  action: 'ignore' | 'simple' | 'escalate' | 'schedule' | 'schedule_manage';
+  action: 'ignore' | 'simple' | 'escalate';
   reply?: string;
-  schedule?: {
-    prompt: string;
-    type: 'once' | 'cron';
-    value: string; // ISO timestamp for once, cron expression for cron
-  };
-  manage?: {
-    operation: 'list' | 'cancel' | 'update';
-    taskId?: string;
-    updates?: {
-      prompt?: string;
-      schedule_value?: string;
-    };
-  };
 }
 
 export interface ScheduledTask {

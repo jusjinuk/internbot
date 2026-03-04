@@ -36,6 +36,7 @@ function createSanitizeBashHook(): HookCallback {
 export async function runAgent(
   prompt: string,
   channelId: string,
+  senderName?: string,
 ): Promise<AgentResult> {
   const sessionId = getSession(channelId);
 
@@ -54,7 +55,12 @@ export async function runAgent(
         systemPrompt: {
           type: 'preset' as const,
           preset: 'claude_code' as const,
-          append: `You are ${ASSISTANT_NAME}, a helpful assistant bot for a lab's Slack workspace. You specialize in research tasks (papers, code, reports) but should also help with any reasonable request from lab members. Format responses for Slack (plain text, no markdown headers). Keep responses concise and actionable.`,
+          append: `You are ${ASSISTANT_NAME}, a helpful assistant bot for a lab's Slack workspace. You specialize in research tasks (papers, code, reports) but should also help with any reasonable request from lab members. Format responses for Slack (plain text, no markdown headers). Keep responses concise and actionable.
+
+Context for this request:
+- Slack channel: ${channelId}
+- User: ${senderName || 'unknown'}
+- You ARE the agent backend — handle all requests directly using your tools and skills. Never tell users to "message the bot in Slack" — they are already talking to you through Slack.`,
         },
         allowedTools: [
           'Bash',
