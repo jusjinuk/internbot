@@ -5,3 +5,4 @@ store/
 *.db
 *.db-journal
 reports-repo/
+run.sbatch

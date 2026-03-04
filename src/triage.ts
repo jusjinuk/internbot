@@ -48,12 +48,26 @@ export function parseTriageResponse(text: string): TriageResult {
       }
     }
     if (action === 'schedule_manage' && parsed.manage) {
-      const { operation, taskId } = parsed.manage;
-      if (operation === 'list' || (operation === 'cancel' && taskId)) {
+      const { operation, taskId, updates } = parsed.manage;
+      if (operation === 'list') {
+        return {
+          action: 'schedule_manage',
+          reply: parsed.reply,
+          manage: { operation },
+        };
+      }
+      if (operation === 'cancel' && taskId) {
         return {
           action: 'schedule_manage',
           reply: parsed.reply,
           manage: { operation, taskId },
+        };
+      }
+      if (operation === 'update' && taskId && updates) {
+        return {
+          action: 'schedule_manage',
+          reply: parsed.reply,
+          manage: { operation, taskId, updates },
         };
       }
     }
@@ -64,9 +78,8 @@ export function parseTriageResponse(text: string): TriageResult {
 }
 
 /**
- * Two-layer triage:
- * 1. Free string match for bot mention (channels only)
- * 2. Haiku API call for classification
+ * Triage: Haiku classifies every message.
+ * In channels, Haiku decides if the message is directed at the bot.
  */
 export async function triage(
   msg: NewMessage,
@@ -74,12 +87,6 @@ export async function triage(
   isDm: boolean,
   isBusy = false,
 ): Promise<TriageResult> {
-  // Layer 1: free check — in channels, ignore if bot not mentioned
-  if (!isDm && !isBotMentioned(msg.content)) {
-    return { action: 'ignore' };
-  }
-
-  // Layer 2: Haiku API call
   const skills = discoverSkills();
   const contextLines = recentContext
     .slice(-5)
@@ -105,14 +112,15 @@ export async function triage(
   const systemPrompt = `You are a triage classifier for ${ASSISTANT_NAME}, a research assistant bot in Slack.
 
 Available skills: ${skills.join(', ') || 'none'}
-Message is from: ${isDm ? 'a direct message' : 'a channel where the bot was mentioned'}${timeContext}${tasksContext}
+Message is from: ${isDm ? 'a direct message (always directed at the bot)' : 'a channel (may or may not be directed at the bot)'}
+Bot name: ${ASSISTANT_NAME}${timeContext}${tasksContext}
 
 Classify the user's message into one of:
-- "ignore": not directed at the bot, human chatter, or messages that don't need a response
+- "ignore": not directed at the bot, people talking to each other, human chatter, or messages that don't need a response. In channels, most messages are people talking to each other — only respond if the bot is explicitly addressed (by name, @mention, or clearly directed at it)
 - "simple": greeting, acknowledgment, or a question answerable in 1-2 sentences without tools
 - "escalate": paper search, code review, brainstorming, report writing, web search, complex questions, anything requiring tools or detailed analysis
 - "schedule": user wants to set up a one-time reminder or recurring task
-- "schedule_manage": user wants to list or cancel scheduled tasks
+- "schedule_manage": user wants to list, cancel, or update scheduled tasks
 
 Respond with ONLY a JSON object. For "simple", include a reply. For "escalate", include a brief contextual acknowledgment message (1 sentence, letting the user know you're on it). For "schedule", include schedule details. For "schedule_manage", include the manage operation. Examples:
 {"action": "ignore"}
@@ -121,7 +129,9 @@ Respond with ONLY a JSON object. For "simple", include a reply. For "escalate", 
 {"action": "schedule", "reply": "I'll set that reminder for you.", "schedule": {"prompt": "check the server status", "type": "once", "value": "2026-03-03T15:00:00.000Z"}}
 {"action": "schedule", "reply": "I'll search arxiv for RL papers every Monday.", "schedule": {"prompt": "search arxiv for recent reinforcement learning papers and summarize the top 3", "type": "cron", "value": "0 9 * * 1"}}
 {"action": "schedule_manage", "reply": "Here are your scheduled tasks.", "manage": {"operation": "list"}}
-{"action": "schedule_manage", "reply": "I'll cancel that task.", "manage": {"operation": "cancel", "taskId": "task-abc123"}}${busyNotice}`;
+{"action": "schedule_manage", "reply": "I'll cancel that task.", "manage": {"operation": "cancel", "taskId": "task-abc123"}}
+{"action": "schedule_manage", "reply": "I'll update that task's schedule.", "manage": {"operation": "update", "taskId": "task-abc123", "updates": {"schedule_value": "0 9 * * *"}}}
+{"action": "schedule_manage", "reply": "I'll update the task prompt.", "manage": {"operation": "update", "taskId": "task-abc123", "updates": {"prompt": "search arxiv for RL and robotics papers"}}}${busyNotice}`;
 
   const userMessage = contextLines
     ? `Recent conversation:\n${contextLines}\n\nNew message from ${msg.sender_name}: ${msg.content}`

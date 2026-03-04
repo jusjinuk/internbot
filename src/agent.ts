@@ -68,6 +68,7 @@ export async function runAgent(
           'mcp__arxiv__*',
           'mcp__context7__*',
           'mcp__time__*',
+          'mcp__hf_papers__*',
         ],
         env: sdkEnv,
         permissionMode: 'bypassPermissions',
@@ -84,6 +85,10 @@ export async function runAgent(
           time: {
             command: 'npx',
             args: ['-y', '@mcpcentral/mcp-time'],
+          },
+          hf_papers: {
+            command: 'uvx',
+            args: ['huggingface-daily-paper-mcp'],
           },
         },
         hooks: {

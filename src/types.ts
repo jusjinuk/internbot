@@ -20,8 +20,12 @@ export interface TriageResult {
     value: string; // ISO timestamp for once, cron expression for cron
   };
   manage?: {
-    operation: 'list' | 'cancel';
+    operation: 'list' | 'cancel' | 'update';
     taskId?: string;
+    updates?: {
+      prompt?: string;
+      schedule_value?: string;
+    };
   };
 }
 

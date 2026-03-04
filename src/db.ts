@@ -177,6 +177,35 @@ export function updateTaskAfterRun(
   ).run(nextRun, status, new Date().toISOString(), lastResult, id);
 }
 
+export function updateTask(
+  id: string,
+  updates: { prompt?: string; schedule_value?: string; next_run?: string },
+): boolean {
+  const fields: string[] = [];
+  const values: unknown[] = [];
+
+  if (updates.prompt !== undefined) {
+    fields.push('prompt = ?');
+    values.push(updates.prompt);
+  }
+  if (updates.schedule_value !== undefined) {
+    fields.push('schedule_value = ?');
+    values.push(updates.schedule_value);
+  }
+  if (updates.next_run !== undefined) {
+    fields.push('next_run = ?');
+    values.push(updates.next_run);
+  }
+
+  if (fields.length === 0) return false;
+
+  values.push(id);
+  const result = db
+    .prepare(`UPDATE scheduled_tasks SET ${fields.join(', ')} WHERE id = ? AND status = 'active'`)
+    .run(...values);
+  return result.changes > 0;
+}
+
 export function deleteTask(id: string): boolean {
   const result = db
     .prepare(`UPDATE scheduled_tasks SET status = 'cancelled' WHERE id = ? AND status = 'active'`)

@@ -32,6 +32,8 @@ description: Set up internbot for development. Use when setting up the project f
    - `mpim:read`
    - `users:read`
    - `reactions:write`
+   - `assistant:write`
+4b. Under **Agents & AI Apps** in the sidebar → toggle **on** (required for streaming responses)
 5. Under **Event Subscriptions** → toggle on → Subscribe to bot events:
    - `message.channels`
    - `message.groups`

@@ -50,11 +50,11 @@ description: Write LaTeX research reports. Use when asked to write, compile, or 
    ```
    Run pdflatex twice (three times with bibtex) to resolve references.
 
-6. **From `reports-repo`**, commit the `.tex` and `.pdf` files
-   - Ask for explicit confirmation before any `git push`
+6. **From `reports-repo`**, commit and push the `.tex` and `.pdf` files
+   - Always commit and push so the report is accessible via GitHub
    - Do not commit generated reports to the main `internbot` repo unless user explicitly asks
 
-7. **Post to Slack**: a brief plain-text summary (not the full LaTeX), mention where the PDF is
+7. **Post to Slack**: a brief plain-text summary (not the full LaTeX) with the direct GitHub link to the PDF
 
 ### Fixing compilation errors
 
@@ -62,8 +62,14 @@ description: Write LaTeX research reports. Use when asked to write, compile, or 
 - Common issues: missing `\end{}`, unescaped `_` or `%`, missing packages
 - Fix the .tex and recompile
 
+## GitHub Repository
+
+- Reports repo: `https://github.com/claw1jinuk/internbot-reports`
+- Direct PDF link format: `https://github.com/claw1jinuk/internbot-reports/blob/main/reports/<filename>.pdf`
+- The repo uses a dedicated GitHub account (`claw1jinuk`) — credentials are already configured locally
+
 ## Formatting for Slack
 
 - Don't paste LaTeX source into Slack
 - Give a 2-3 sentence summary of what the report covers
-- Mention the GitHub link to the PDF in `internbot-reports`
+- Always include the direct GitHub link to the PDF

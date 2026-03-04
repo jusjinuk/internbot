@@ -7,9 +7,11 @@ import {
   createTask,
   deleteTask,
   getRecentMessages,
+  getTaskById,
   getTasksForChannel,
   initDatabase,
   storeMessage,
+  updateTask,
 } from './db.js';
 import { logger } from './logger.js';
 import { startSchedulerLoop, stopSchedulerLoop } from './scheduler.js';
@@ -30,8 +32,10 @@ function handleMessage(msg: NewMessage): void {
   // Skip bot messages
   if (msg.is_bot_message || msg.is_from_me) return;
 
-  // Whitelist filter
+  // Whitelist filter (DMs always pass through)
+  const isDm = msg.channel_type === 'im' || msg.channel_type === 'mpim';
   if (
+    !isDm &&
     WHITELISTED_CHANNELS.length > 0 &&
     !WHITELISTED_CHANNELS.includes(msg.channel_id)
   ) {
@@ -278,6 +282,52 @@ async function handleScheduleManage(
     const response = deleted
       ? reply || `Task \`${manage.taskId}\` has been cancelled.`
       : `Task \`${manage.taskId}\` not found or already cancelled.`;
+    await slack.sendMessage(msg.channel_id, response, msg.thread_ts);
+    return;
+  }
+
+  if (manage.operation === 'update' && manage.taskId && manage.updates) {
+    const existing = getTaskById(manage.taskId);
+    if (!existing || existing.status !== 'active') {
+      await slack.sendMessage(
+        msg.channel_id,
+        `Task \`${manage.taskId}\` not found or not active.`,
+        msg.thread_ts,
+      );
+      return;
+    }
+
+    const dbUpdates: { prompt?: string; schedule_value?: string; next_run?: string } = {};
+    if (manage.updates.prompt) dbUpdates.prompt = manage.updates.prompt;
+
+    if (manage.updates.schedule_value) {
+      // Validate new cron expression
+      try {
+        CronExpressionParser.parse(manage.updates.schedule_value, { tz: TIMEZONE });
+      } catch {
+        await slack.sendMessage(
+          msg.channel_id,
+          `Sorry, I couldn't parse that as a valid cron schedule: \`${manage.updates.schedule_value}\`.`,
+          msg.thread_ts,
+        );
+        return;
+      }
+      dbUpdates.schedule_value = manage.updates.schedule_value;
+
+      // Recompute next_run with the new schedule
+      if (existing.schedule_type === 'cron') {
+        const expr = CronExpressionParser.parse(manage.updates.schedule_value, {
+          currentDate: new Date(),
+          tz: TIMEZONE,
+        });
+        dbUpdates.next_run = expr.next().toISOString() ?? new Date().toISOString();
+      }
+    }
+
+    const updated = updateTask(manage.taskId, dbUpdates);
+    const response = updated
+      ? reply || `Task \`${manage.taskId}\` has been updated.`
+      : `Failed to update task \`${manage.taskId}\`.`;
     await slack.sendMessage(msg.channel_id, response, msg.thread_ts);
     return;
   }
